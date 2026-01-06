@@ -17,5 +17,8 @@ add_compile_options(
 )
 
 # ---- Subdirectories ----
+add_subdirectory(utils)
+add_subdirectory(metrics)
 add_subdirectory(server)
 add_subdirectory(client)
+

@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <sys/socket.h>
 
+#include "utils/SocketUtils.hpp"
+
 constexpr const char* HOST = "127.0.0.1";
 constexpr int PORT = 9100;
 constexpr size_t BUFFER_SIZE = 4096;
