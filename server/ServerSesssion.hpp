@@ -2,8 +2,8 @@
 // Created by Arjun Varma on 06/01/26.
 //
 
-#ifndef CLIENTSESSION_HPP
-#define CLIENTSESSION_HPP
+#ifndef SERVERSESSSION_HPP
+#define SERVERSESSSION_HPP
 
 
 
@@ -11,16 +11,19 @@
 #include <atomic>
 #include <netinet/in.h>
 
-class ClientSession {
+class ServerSession {
 public:
-    ClientSession(int sock, sockaddr_in addr);
+    ServerSession(int clientSock, sockaddr_in clientAddr);
     void run(std::atomic<bool>& shuttingDown);
 
 private:
     int clientSock;
     std::string clientIP;
+
+    void handleList();
+    void handlePut();
 };
 
 
 
-#endif //CLIENTSESSION_HPP
+#endif //SERVERSESSSION_HPP

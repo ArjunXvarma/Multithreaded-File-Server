@@ -3,8 +3,8 @@
 //
 
 #include "TCPServer.hpp"
-#include "ClientSession.hpp"
 #include "utils/Logger.hpp"
+#include "ServerSesssion.hpp"
 
 #include <iostream>
 #include <thread>
@@ -58,9 +58,7 @@ void TcpServer::start() {
         sockaddr_in clientAddr{};
         socklen_t len = sizeof(clientAddr);
 
-        int clientSock = accept(serverSock,
-                                (sockaddr*)&clientAddr,
-                                &len);
+        int clientSock = accept(serverSock, (sockaddr*)&clientAddr, &len);
 
         if (clientSock < 0) {
             if (shuttingDown.load()) break;
@@ -69,7 +67,7 @@ void TcpServer::start() {
 
         std::thread(
             [clientSock, clientAddr]() {
-                ClientSession session(clientSock, clientAddr);
+                ServerSession session(clientSock, clientAddr);
                 session.run(shuttingDown);
             }
         ).detach();

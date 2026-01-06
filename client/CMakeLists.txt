@@ -1,5 +1,7 @@
 add_executable(client
-        client.cpp
+        ClientSession.cpp
+        ClientSession.hpp
+        main.cpp
 )
 
 target_link_libraries(client PRIVATE utils metrics)

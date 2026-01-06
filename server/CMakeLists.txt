@@ -1,11 +1,11 @@
 add_executable(server
-        ClientSession.cpp
-        ClientSession.hpp
         TCPServer.cpp
         TCPServer.hpp
-        FileService.cpp
         FileService.hpp
+        FileService.cpp
         main.cpp
+        ServerSesssion.cpp
+        ServerSesssion.hpp
 )
 
 # POSIX threads (required for std::thread)
