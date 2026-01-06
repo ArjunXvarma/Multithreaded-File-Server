@@ -8,36 +8,30 @@
 
 
 #include <atomic>
-#include <cstdint>
+#include <chrono>
 #include <string>
 
 class Metrics {
 public:
-    // Lifecycle
-    static void clientConnected();
-    static void clientDisconnected();
+    // Connection lifecycle
+    static void connectionOpened();
+    static void connectionClosed();
 
     // Requests
-    static void requestReceived();
-    static void requestCompleted();
+    static void requestStarted();
+    static void requestSucceeded(std::chrono::microseconds latency);
     static void requestFailed();
-
-    // File ops
-    static void fileUploadStarted();
-    static void fileUploadCompleted();
-    static void fileUploadFailed();
 
     // Snapshot
     static std::string snapshot();
 
 private:
-    static std::atomic<uint64_t> activeConnections;
-    static std::atomic<uint64_t> totalRequests;
-    static std::atomic<uint64_t> completedRequests;
-    static std::atomic<uint64_t> failedRequests;
-    static std::atomic<uint64_t> uploadsStarted;
-    static std::atomic<uint64_t> uploadsCompleted;
-    static std::atomic<uint64_t> uploadsFailed;
+    static std::atomic<int> activeConnections;
+    static std::atomic<long> totalRequests;
+    static std::atomic<long> failedRequests;
+
+    static std::atomic<long long> totalLatencyUs;
+    static std::atomic<long long> completedRequests;
 };
 
 

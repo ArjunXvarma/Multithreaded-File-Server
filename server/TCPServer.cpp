@@ -5,6 +5,7 @@
 #include "TCPServer.hpp"
 #include "utils/Logger.hpp"
 #include "ServerSesssion.hpp"
+#include "metrics/metrics.hpp"
 
 #include <iostream>
 #include <thread>
@@ -30,7 +31,16 @@ TcpServer::TcpServer(int port) : port(port) {}
 
 void TcpServer::start() {
     signal(SIGINT, handleSignal);
+
     Logger::reset();
+
+    // periodic metrics logger
+    std::thread([] {
+        while (true) {
+            std::this_thread::sleep_for(std::chrono::seconds(3));
+            Logger::log("METRICS", Metrics::snapshot());
+        }
+    }).detach();
 
     int serverSock = socket(AF_INET, SOCK_STREAM, 0);
     if (serverSock < 0) {
@@ -40,28 +50,43 @@ void TcpServer::start() {
 
     serverSockGlobal = serverSock;
 
+    int opt = 1;
+    setsockopt(serverSock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
     sockaddr_in serverAddr{};
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port);
     serverAddr.sin_addr.s_addr = INADDR_ANY;
 
-    if (bind(serverSock, (sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
+    if (bind(serverSock,
+             reinterpret_cast<sockaddr*>(&serverAddr),
+             sizeof(serverAddr)) < 0) {
         perror("bind");
         close(serverSock);
         return;
     }
 
-    listen(serverSock, 20);
+    if (listen(serverSock, 20) < 0) {
+        perror("listen");
+        close(serverSock);
+        return;
+    }
+
     std::cout << "Server started. Listening on port " << port << "\n";
 
     while (!shuttingDown.load()) {
         sockaddr_in clientAddr{};
         socklen_t len = sizeof(clientAddr);
 
-        int clientSock = accept(serverSock, (sockaddr*)&clientAddr, &len);
+        int clientSock = accept(serverSock,
+                                reinterpret_cast<sockaddr*>(&clientAddr),
+                                &len);
 
         if (clientSock < 0) {
-            if (shuttingDown.load()) break;
+            if (shuttingDown.load()) {
+                break;
+            }
+            perror("accept");
             continue;
         }
 

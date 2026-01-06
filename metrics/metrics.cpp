@@ -3,58 +3,48 @@
 //
 
 #include "metrics.hpp"
-
-#include "metrics.hpp"
 #include <sstream>
 
-std::atomic<uint64_t> Metrics::activeConnections{0};
-std::atomic<uint64_t> Metrics::totalRequests{0};
-std::atomic<uint64_t> Metrics::completedRequests{0};
-std::atomic<uint64_t> Metrics::failedRequests{0};
-std::atomic<uint64_t> Metrics::uploadsStarted{0};
-std::atomic<uint64_t> Metrics::uploadsCompleted{0};
-std::atomic<uint64_t> Metrics::uploadsFailed{0};
+std::atomic<int> Metrics::activeConnections{0};
+std::atomic<long> Metrics::totalRequests{0};
+std::atomic<long> Metrics::failedRequests{0};
 
-void Metrics::clientConnected() {
-    activeConnections++;
+std::atomic<long long> Metrics::totalLatencyUs{0};
+std::atomic<long long> Metrics::completedRequests{0};
+
+void Metrics::connectionOpened() {
+    activeConnections.fetch_add(1, std::memory_order_relaxed);
 }
 
-void Metrics::clientDisconnected() {
-    activeConnections--;
+void Metrics::connectionClosed() {
+    activeConnections.fetch_sub(1, std::memory_order_relaxed);
 }
 
-void Metrics::requestReceived() {
-    totalRequests++;
+void Metrics::requestStarted() {
+    totalRequests.fetch_add(1, std::memory_order_relaxed);
 }
 
-void Metrics::requestCompleted() {
-    completedRequests++;
+void Metrics::requestSucceeded(std::chrono::microseconds latency) {
+    completedRequests.fetch_add(1, std::memory_order_relaxed);
+    totalLatencyUs.fetch_add(latency.count(), std::memory_order_relaxed);
 }
 
 void Metrics::requestFailed() {
-    failedRequests++;
-}
-
-void Metrics::fileUploadStarted() {
-    uploadsStarted++;
-}
-
-void Metrics::fileUploadCompleted() {
-    uploadsCompleted++;
-}
-
-void Metrics::fileUploadFailed() {
-    uploadsFailed++;
+    failedRequests.fetch_add(1, std::memory_order_relaxed);
 }
 
 std::string Metrics::snapshot() {
+    long completed = completedRequests.load();
+    long long latency = totalLatencyUs.load();
+
+    long avgLatency =
+        completed > 0 ? latency / completed : 0;
+
     std::ostringstream oss;
-    oss << "ActiveConnections=" << activeConnections.load()
-        << " | TotalRequests=" << totalRequests.load()
-        << " | CompletedRequests=" << completedRequests.load()
-        << " | FailedRequests=" << failedRequests.load()
-        << " | UploadsStarted=" << uploadsStarted.load()
-        << " | UploadsCompleted=" << uploadsCompleted.load()
-        << " | UploadsFailed=" << uploadsFailed.load();
+    oss << "active_connections=" << activeConnections.load()
+        << " total_requests=" << totalRequests.load()
+        << " failed_requests=" << failedRequests.load()
+        << " avg_latency_us=" << avgLatency;
+
     return oss.str();
 }

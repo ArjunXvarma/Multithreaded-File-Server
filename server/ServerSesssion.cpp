@@ -12,6 +12,9 @@
 #include <unistd.h>
 #include <iostream>
 
+#include "metrics/metrics.hpp"
+#include <chrono>
+
 ServerSession::ServerSession(int sock, sockaddr_in clientAddr)
     : clientSock(sock) {
 
@@ -21,27 +24,36 @@ ServerSession::ServerSession(int sock, sockaddr_in clientAddr)
 }
 
 void ServerSession::run(std::atomic<bool>& shuttingDown) {
-    // Idle timeout for safety
     SocketUtils::setReceiveTimeout(clientSock, 30);
+    Metrics::connectionOpened();
 
     while (!shuttingDown.load()) {
         std::string command = SocketUtils::recvLine(clientSock);
+        if (command.empty()) break;
 
-        if (command.empty()) {
-            // client disconnected or timeout
-            break;
-        }
+        Metrics::requestStarted();
+        auto start = std::chrono::steady_clock::now();
 
-        if (command == "list") {
-            handleList();
-        } else if (command == "put") {
-            handlePut();
-        } else {
-            // Unknown command — ignore or log
-            Logger::log(clientIP, "unknown_command");
+        try {
+            if (command == "list") {
+                FileService::listFiles(clientSock, clientIP);
+            } else if (command == "put") {
+                FileService::receiveFile(clientSock, clientIP);
+            } else {
+                Metrics::requestFailed();
+                continue;
+            }
+
+            auto end = std::chrono::steady_clock::now();
+            Metrics::requestSucceeded(
+                std::chrono::duration_cast<std::chrono::microseconds>(end - start)
+            );
+        } catch (...) {
+            Metrics::requestFailed();
         }
     }
 
+    Metrics::connectionClosed();
     close(clientSock);
 }
 
