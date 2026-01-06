@@ -78,9 +78,7 @@ void TcpServer::start() {
         sockaddr_in clientAddr{};
         socklen_t len = sizeof(clientAddr);
 
-        int clientSock = accept(serverSock,
-                                reinterpret_cast<sockaddr*>(&clientAddr),
-                                &len);
+        int clientSock = accept(serverSock, reinterpret_cast<sockaddr*>(&clientAddr), &len);
 
         if (clientSock < 0) {
             if (shuttingDown.load()) {
@@ -90,14 +88,19 @@ void TcpServer::start() {
             continue;
         }
 
-        std::thread(
-            [clientSock, clientAddr]() {
-                ServerSession session(clientSock, clientAddr);
-                session.run(shuttingDown);
-            }
-        ).detach();
+        bool accepted = pool.submit([clientSock, clientAddr]() {
+            ServerSession session(clientSock, clientAddr);
+            session.run(shuttingDown);
+        });
+
+        if (!accepted) {
+            Metrics::connectionRejected();
+            close(clientSock);
+        }
     }
 
     close(serverSock);
+    pool.shutdown();
+
     std::cout << "Server shutdown complete.\n";
 }

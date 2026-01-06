@@ -6,6 +6,8 @@ add_executable(server
         main.cpp
         ServerSesssion.cpp
         ServerSesssion.hpp
+        ThreadPool.cpp
+        ThreadPool.hpp
 )
 
 # POSIX threads (required for std::thread)

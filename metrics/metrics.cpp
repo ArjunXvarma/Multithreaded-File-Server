@@ -33,6 +33,12 @@ void Metrics::requestFailed() {
     failedRequests.fetch_add(1, std::memory_order_relaxed);
 }
 
+static std::atomic<long> rejectedConnections{0};
+
+void Metrics::connectionRejected() {
+    ++rejectedConnections;
+}
+
 std::string Metrics::snapshot() {
     long completed = completedRequests.load();
     long long latency = totalLatencyUs.load();
@@ -44,7 +50,8 @@ std::string Metrics::snapshot() {
     oss << "active_connections=" << activeConnections.load()
         << " total_requests=" << totalRequests.load()
         << " failed_requests=" << failedRequests.load()
-        << " avg_latency_us=" << avgLatency;
+        << " avg_latency_us=" << avgLatency
+        << " rejected_connections=" << rejectedConnections.load();
 
     return oss.str();
 }

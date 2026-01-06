@@ -59,10 +59,7 @@ void FileService::receiveFile(int clientSock, const std::string& clientIP) {
     bool transferFailed = false;
 
     while (remaining > 0) {
-        int n = recv(clientSock,
-                     buffer,
-                     std::min(BUFFER_SIZE, (size_t)remaining),
-                     0);
+        int n = recv(clientSock, buffer, std::min(BUFFER_SIZE, (size_t)remaining), 0);
 
         if (n <= 0) {
             transferFailed = true;

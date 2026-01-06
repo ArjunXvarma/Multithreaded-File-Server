@@ -13,16 +13,14 @@
 
 class Metrics {
 public:
-    // Connection lifecycle
     static void connectionOpened();
     static void connectionClosed();
+    static void connectionRejected();
 
-    // Requests
     static void requestStarted();
     static void requestSucceeded(std::chrono::microseconds latency);
     static void requestFailed();
 
-    // Snapshot
     static std::string snapshot();
 
 private:

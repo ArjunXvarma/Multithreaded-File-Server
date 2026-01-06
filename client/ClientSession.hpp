@@ -24,5 +24,4 @@ private:
 
 
 
-
 #endif //CLIENTSESSION_HPP

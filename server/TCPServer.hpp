@@ -7,6 +7,8 @@
 
 
 
+#include "ThreadPool.hpp"
+
 class TcpServer {
 public:
     explicit TcpServer(int port);
@@ -14,6 +16,7 @@ public:
 
 private:
     int port;
+    ThreadPool pool{8, 64};
 };
 
 
